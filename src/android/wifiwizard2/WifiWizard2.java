@@ -2033,7 +2033,8 @@ public class WifiWizard2 extends CordovaPlugin {
 
         NetworkRequest.Builder networkRequestBuilder1 = new NetworkRequest.Builder();
 
-        networkRequestBuilder1.addTransportType(NetworkCapabilities.TRANSPORT_WIFI);
+        networkRequestBuilder1.addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+                .removeCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET);
 
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -2049,12 +2050,9 @@ public class WifiWizard2 extends CordovaPlugin {
                   public void onAvailable(Network network) {
                     super.onAvailable(network);
                     Log.d(TAG, "WifiWizard2: 211 onAvailable:" + network);
+                    callbackContext.success();
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                      if(cm.bindProcessToNetwork(network)){
-                        callbackContext.success();
-                      }else{
-                        callbackContext.error("CANNONT_BIND_PROCESS_TO_NETWORK");
-                      }
+                      cm.bindProcessToNetwork(network);
                     }
                   }
 
@@ -2063,16 +2061,6 @@ public class WifiWizard2 extends CordovaPlugin {
                     super.onUnavailable();
                     Log.d(TAG, "WifiWizard2: 211 onUnavailable");
                     callbackContext.error("SPECIFIER_NETWORK_UNAVAILABLE");
-                  }
-
-                  @Override
-                  public void onLost(Network network) {
-                      super.onLost(network);
-                  }
-
-                  @Override
-                  public void onCapabilitiesChanged(Network network, NetworkCapabilities networkCapabilities) {
-                      super.onCapabilitiesChanged(network, networkCapabilities);
                   }
                 };
         cm.requestNetwork(networkRequest, networkCallback);
@@ -2114,84 +2102,36 @@ public class WifiWizard2 extends CordovaPlugin {
             String PASS = data.getString(1);
             String Algorithm = data.getString(2);
             Boolean isHidden = data.getBoolean(3);
-            final NetworkSpecifier specifier =
-              new WifiNetworkSpecifier.Builder()
-              .setSsidPattern(new PatternMatcher(SSID, PatternMatcher.PATTERN_PREFIX))
-              .build();
 
-            final NetworkRequest request =
-              new NetworkRequest.Builder()
-              .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
-              .removeCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-              .setNetworkSpecifier(specifier)
-              .build();
+            WifiNetworkSuggestion.Builder builder = new WifiNetworkSuggestion.Builder();
+            builder.setSsid(SSID);
+            builder.setIsAppInteractionRequired(false);
 
-            final ConnectivityManager connectivityManager = (ConnectivityManager)
-              context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            if (Algorithm.matches("/WEP|WPA|WPA2/gim") && PASS.length() > 0) {
+                builder.setWpa2Passphrase(PASS);
+            }
 
-            final NetworkCallback networkCallback = new NetworkCallback() {
-              ...
-              @Override
-              void onAvailable(...) {
-                  // do success processing here..
-                callbackContext.success(data);
-              }
+            if (Algorithm.matches("/WPA3/gim") && !PASS.isEmpty()) {
+                builder.setWpa3Passphrase(PASS);
+            }
 
-              @Override
-              void onUnavailable(...) {
-                  // do failure processing here..
-              }
-              ...
-            };
-            connectivityManager.requestNetwork(request, networkCallback);
-            ...
-            // Release the request when done.
-            connectivityManager.unregisterNetworkCallback(networkCallback);
+            if (isHidden) {
+                builder.setIsHiddenSsid(true);
+            }
 
-          //   WifiNetworkSuggestion.Builder builder = new WifiNetworkSuggestion.Builder();
-          //   builder.setSsid(SSID);
-          //   builder.setIsAppInteractionRequired(true);
+            WifiNetworkSuggestion suggestion = builder.build();
 
-          //   if (Algorithm.matches("/WEP|WPA|WPA2/gim") && PASS.length() > 0) {
-          //       builder.setWpa2Passphrase(PASS);
-          //   }
+            final List<WifiNetworkSuggestion> suggestionsList = new ArrayList<WifiNetworkSuggestion>();
+            suggestionsList.add(suggestion);
 
-          //   if (Algorithm.matches("/WPA3/gim") && !PASS.isEmpty()) {
-          //       builder.setWpa3Passphrase(PASS);
-          //   }
+            final WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
 
-          //   if (isHidden) {
-          //       builder.setIsHiddenSsid(true);
-          //   }
-
-          //   WifiNetworkSuggestion suggestion = builder.build();
-
-          //   final List<WifiNetworkSuggestion> suggestionsList = new ArrayList<WifiNetworkSuggestion>();
-          //   suggestionsList.add(suggestion);
-
-          //   final WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
-
-          //   final int status = wifiManager.addNetworkSuggestions(suggestionsList);
-          //   if (status != WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS) {
-          //       callbackContext.error("STATUS_NETWORK_SUGGESTIONS_ERROR");
-          //       return;
-          //   }
-          //             // Optional (Wait for post connection broadcast to one of your suggestions)
-          // final IntentFilter intentFilter =
-          //   new IntentFilter(WifiManager.ACTION_WIFI_NETWORK_SUGGESTION_POST_CONNECTION);
-
-          // final BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
-          //   @Override
-          //   public void onReceive(Context context, Intent intent) {
-          //     if (!intent.getAction().equals(
-          //       WifiManager.ACTION_WIFI_NETWORK_SUGGESTION_POST_CONNECTION)) {
-          //       return;
-          //     }
-          //     // do post connect processing here...
-          //   }
-          // };
-          // context.registerReceiver(broadcastReceiver, intentFilter);
-          //   callbackContext.success(data);
+            final int status = wifiManager.addNetworkSuggestions(suggestionsList);
+            if (status != WifiManager.STATUS_NETWORK_SUGGESTIONS_SUCCESS) {
+                callbackContext.error("STATUS_NETWORK_SUGGESTIONS_ERROR");
+                return;
+            }
+            callbackContext.success("STATUS_NETWORK_SUGGESTIONS_ADDED");
             
             //TODO: check when device is connected
 
