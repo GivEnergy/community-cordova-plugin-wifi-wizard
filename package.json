@@ -1,18 +1,29 @@
 {
-  "name": "community-cordova-plugin-wifi-wizard",
+  "name": "@givenergy/wifi-wizard",
   "version": "3.4.0",
+  "author": "Ryan Love <ryan.love@givenergy.co.uk>",
+  "description": "Cordova WiFi Manager for Android and iOS",
+  "main": "www/WifiWizard2.js",
+  "bugs": {
+    "url": "https://github.com/GivEnergy/community-cordova-plugin-wifi-wizard/issues"
+  },
+  "repository": "https://github.com/GivEnergy/community-cordova-plugin-wifi-wizard.git",
+  "homepage": "https://github.com/GivEnergy/community-cordova-plugin-wifi-wizard",
+  "keywords": [
+    "ecosystem:cordova",
+    "cordova-android",
+    "cordova-ios"
+  ],
+  "files": [
+    "www/*",
+    "src/**/*"
+  ],
   "cordova": {
     "id": "community-cordova-plugin-wifi-wizard",
     "platforms": [
       "android",
       "ios"
     ]
-  },
-  "author": "EYALIN",
-  "license": "Apache 2.0",
-  "description": "Cordova WiFi Manager for Android and iOS",
-  "bugs": {
-    "url": "https://github.com/tripflex/wifiwizard2/issues"
   },
   "engines": {
     "cordovaDependencies": {
@@ -21,14 +32,6 @@
       }
     }
   },
-  "repository": "EYALIN/community-cordova-plugin-wifi-wizard/tree/master",
-  "homepage": "https://github.com/EYALIN/community-cordova-plugin-wifi-wizard/tree/master/tree/master",
-  "funding": "https://github.com/sponsors/EYALIN",
-  "keywords": [
-    "ecosystem:cordova",
-    "cordova-android",
-    "cordova-ios"
-  ],
   "devDependencies": {
     "babel-polyfill": "^6.26.0",
     "babel-preset-env": "^1.6.1",
